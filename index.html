@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>DDG API Key Grabber</title>
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2.5em;
+            color: #333;
+            margin-bottom: 50px;
+        }
+
+        .page {
+            text-align: center;
+            margin: 0 auto;
+            width: 80%;
+            max-width: 500px;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 4px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .page h1 {
+            font-size: 2em;
+            margin-bottom: 20px;
+        }
+
+        .page input[type="text"],
+        .page input[type="password"] {
+            width: 90%;
+            padding: 12px 20px;
+            margin: 8px 0;
+            display: inline-block;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 1.2em;
+        }
+
+        .page button {
+            width: 90%;
+            background-color: #4CAF50;
+            color: white;
+            padding: 14px 20px;
+            margin: 8px 0;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1.2em;
+        }
+
+        .page button:hover {
+            background-color: #45a049;
+        }
+
+        #tokenOutput {
+            overflow-wrap: break-word;
+            word-wrap: break-word;
+        }
+
+        #emailDisplay {
+            font-size: 1.2em;
+            color: #333;
+            margin-bottom: 10px;
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+        }
+
+        #errorPopup {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+
+        #errorPopup>div {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            text-align: center;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
+            animation: fade-in 0.5s ease-out;
+        }
+
+        #errorPopup h2 {
+            color: #ff0000;
+        }
+
+        #errorPopup #error-message {
+            color: #ff0000;
+        }
+
+        #errorPopup button {
+            background-color: #ff0000;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .instruction {
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+
+        .instruction p {
+            margin: 0 0 10px;
+        }
+
+        .instruction a {
+            color: #007BFF;
+            text-decoration: none;
+        }
+
+        .instruction a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>DDG Email API Key Grabber</h1>
+    <div id="usernamePage" class="page">
+        <h1>Enter Username</h1>
+        <div class="instruction">
+            <p>Enter your DDG email username here.</p>
+            <p>If you don't know your username, please visit <a href="https://duckduckgo.com/email" target="_blank"
+                    rel="noopener">duckduckgo.com/email</a>. It will will be listed under: <i>"Autofill enabled in this
+                    browser for"</i>.</p>
+        </div>
+        <input type="text" id="username" placeholder="Username">
+        <div class="h-captcha" data-sitekey="92f19740-3042-4fa0-b878-c38b0301b0c3"></div>
+        <button onclick="auth()">Next →</button>
+    </div>
+    <div id="otpPage" class="page" style="display: none;">
+        <h1>Enter OTP</h1>
+        <div class="instruction">
+            <p>An email was just sent to you from DuckDuckGo.</p>
+            <p>Enter the OTP (the four random words) OR copy and paste the link here.</p>
+        </div>
+        <p id="emailDisplay"></p>
+        <input type="text" id="otp" placeholder="OTP">
+        <button id="getKey" onclick="getToken()">Get Key →</button>
+        <button onclick="backToUsername()">← Back</button>
+    </div>
+    <div id="tokenPage" class="page" style="display: none;">
+        <h1>Your API Key</h1>
+        <div class="instruction">
+            <p>This is your API key.</p>
+            <p>Copy it and save it in a password manager for easy access.</p>
+        </div>
+        <p id="tokenOutput"></p>
+        <button id="copyButton" onclick="copyToken()">Copy Key</button>
+        <button onclick="resetPage()">← Start Over</button>
+    </div>
+    <div id="errorPopup">
+        <div>
+            <h2>Error</h2>
+            <p id="error-message">An error occurred</p>
+            <button onclick="closeErrorPopup()">Dismiss</button>
+        </div>
+    </div>
+    <footer
+        style="position: relative; left: 0; bottom: 0; width: 100%; text-align: center; padding: 10px 0; font-family: Arial, sans-serif; margin-top: 20px;">
+        <a href="https://github.com/Hamster45105/ddgemail-token">
+            <img alt="GitHub Repo stars"
+                src="https://img.shields.io/github/stars/Hamster45105/ddgemail-token?style=social&logo=github&label=Stars">
+        </a>
+        <div id="google_translate_element"></div>
+        <p style="color: #333; font-family: Arial, sans-serif; font-size: 18px; text-align: center;">
+            Made with ❤️ by
+            <a href="https://github.com/Hamster45105" target="_blank" rel="noopener"
+                style="color: #333; text-decoration: none; font-weight: bold;">
+                Hamster45105
+            </a>
+        </p>
+    </footer>
+    <script src="https://js.hcaptcha.com/1/api.js" async defer></script>
+    <script>
+        // Main functions
+        async function auth() {
+            // Set variables
+            let username = document.getElementById('username').value;
+            const hcaptchaResponse = hcaptcha.getResponse();
+            const button = document.querySelector('button[onclick="auth()"]');
+
+            // Change button to loading
+            setButtonLoading(button, 'Authenticating...');
+
+            // Remove @duck.com if found
+            if (username.endsWith('@duck.com')) {
+                username = username.slice(0, -9);
+                document.getElementById('username').value = username;
+            }
+
+            // Send request
+            try {
+                const response = await fetch('/api/auth', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, hcaptchaResponse })
+                });
+
+                // Throw error if response is not OK
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error);
+                }
+
+                // Display username
+                document.getElementById('emailDisplay').textContent = document.getElementById('username').value + '@duck.com';
+
+                // Change pages
+                document.getElementById('otpPage').style.display = 'block';
+                document.getElementById('usernamePage').style.display = 'none';
+            } catch (error) {
+                // Throw error if occured
+                hcaptcha.reset();
+                showErrorPopup(error.message)
+            }
+
+            // Remove button loading status
+            unSetButtonLoading(button, 'Next →');
+        }
+
+        async function getToken() {
+            // Set variables
+            let otp = document.getElementById('otp').value.replace(/ /g, '+');
+            const username = document.getElementById('username').value;
+            const button = document.querySelector('button[onclick="getToken()"]');
+            const urlParams = new URLSearchParams(window.location.search);
+            const callbackUrl = urlParams.get('callback');
+            const webName = urlParams.get('app_name');
+
+            // Change button to loading
+            setButtonLoading(button, 'Getting Key...');
+
+            // Extract words from link if link was pasted
+            const otpPattern = /https:\/\/duckduckgo\.com\/email\/login\?otp=(\w+-\w+-\w+-\w+)&user=\w+/;
+            const match = otp.match(otpPattern);
+            if (match) {
+                otp = match[1].replace(/-/g, ' ');
+                document.getElementById('otp').value = otp;
+            }
+
+            // Send request
+            try {
+                const response = await fetch('/api/getToken', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, otp })
+                });
+
+                // Throw error if response is not OK
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error);
+                }
+
+                // Display key
+                const data = await response.json();
+                document.getElementById('tokenOutput').innerText = data.token;
+
+                // Get the callback URL from the URL parameters
+
+                // If the callback URL is present, replace [API_KEY] with the token and redirect the user
+                if (callbackUrl) {
+                    const redirectUrl = callbackUrl.replace('__API_KEY__', data.token);
+                    window.location.href = redirectUrl;
+                } else {
+                    // Change page
+                    document.getElementById('otpPage').style.display = 'none';
+                    document.getElementById('tokenPage').style.display = 'block';
+                }
+
+            } catch (error) {
+                // Show error if occured
+                showErrorPopup(error.message)
+            }
+
+            if (callbackUrl) {
+                button.innerHTML = 'Continue to: <strong>' + webName + '</strong>';
+                button.disabled = false;
+                button.style.backgroundColor = "#4CAF50";
+            } else {
+                unSetButtonLoading(button, 'Get Key →');
+            }
+        }
+
+        // Page changing
+        function backToUsername() {
+            // Reset captcha
+            hcaptcha.reset();
+
+            // Clear OTP textbox
+            document.getElementById('otp').value = '';
+
+            // Change page
+            document.getElementById('otpPage').style.display = 'none';
+            document.getElementById('usernamePage').style.display = 'block';
+        }
+
+        function resetPage() {
+            // Reset captcha
+            hcaptcha.reset();
+
+            // Reset copy button
+            document.getElementById('copyButton').textContent = 'Copy Key';
+            document.getElementById('copyButton').style.backgroundColor = '#4CAF50';
+
+            // Clear OTP textbox
+            document.getElementById('otp').value = '';
+
+            // Clear result
+            document.getElementById('tokenOutput').innerText = '';
+
+            // Change page
+            document.getElementById('tokenPage').style.display = 'none';
+            document.getElementById('usernamePage').style.display = 'block';
+
+        }
+
+        function authCancel() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const callbackUrl = urlParams.get('callback');
+            const redirectUrl = callbackUrl.replace('__API_KEY__', 'USER_CANCELLED');
+            window.location.href = redirectUrl;
+        }
+
+        // Button functions
+        function copyToken() {
+            var token = document.getElementById('tokenOutput').innerText;
+            navigator.clipboard.writeText(token);
+
+            const button = document.querySelector('button[onclick="copyToken()"]');
+            button.textContent = "Copied!";
+            button.style.backgroundColor = "#21ceb7";
+        }
+
+        // Loading button handling
+        function setButtonLoading(button, loadingText) {
+            button.textContent = loadingText;
+            button.disabled = true;
+            button.style.backgroundColor = "#808080";
+        }
+
+        function unSetButtonLoading(button, originalText) {
+            button.textContent = originalText;
+            button.disabled = false;
+            button.style.backgroundColor = "#4CAF50";
+        }
+
+        // Error popup handling
+        function showErrorPopup(errorMessage) {
+            document.getElementById("error-message").innerHTML = errorMessage;
+            document.getElementById("errorPopup").style.display = "block";
+        }
+
+        function closeErrorPopup() {
+            document.getElementById("errorPopup").style.display = "none";
+        }
+
+        // Keyboard enter shortcuts
+        document.getElementById('username').addEventListener('keydown', function (event) {
+            if (event.key === 'Enter') {
+                auth();
+            }
+        });
+
+        document.getElementById('otp').addEventListener('keydown', function (event) {
+            if (event.key === 'Enter') {
+                getToken();
+            }
+        });
+
+    </script>
+    <script type="text/javascript"
+        src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+    <script type="text/javascript">
+        function googleTranslateElementInit() {
+            new google.translate.TranslateElement({ pageLanguage: 'en', layout: google.translate.TranslateElement.InlineLayout.HORIZONTAL }, 'google_translate_element');
+        }
+    </script>
+    <script>
+        window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+    </script>
+    <script defer src="/_vercel/insights/script.js"></script>
+</body>
+
+</html>
